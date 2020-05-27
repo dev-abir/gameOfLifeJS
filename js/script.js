@@ -12,6 +12,7 @@ var ctx = canvas.getContext('2d');
 /////////////////////SETTINGS/////////////////////
 const CELL_WIDTH = 10;					// I may think about makeing it responsive later...
 const CELL_HEIGHT = 10;					// I may think about makeing it responsive later...
+const CELL_BORDER_WIDTH = 1				// I may think about makeing it responsive later...
 
 const CANVAS_WIDTH = canvas.width;		// I may think about makeing it responsive later...
 const CANVAS_HEIGHT = canvas.height;	// I may think about makeing it responsive later...
@@ -23,8 +24,8 @@ const DEFAULT_FPS = 10;
 
 
 /////////////////////GLOBAL VARS/////////////////////
-var previousCells = generateDiedCells();
-var currentCells = generateDiedCells();
+var previousCells;
+var currentCells;
 
 var mousedown = false;
 var animate = false;
@@ -36,6 +37,8 @@ function reset() {
 	currentCells = generateDiedCells();
 
 	clearCanvas();
+
+	animate = false;
 }
 
 function clearCanvas() {
@@ -46,12 +49,12 @@ function clearCanvas() {
 
 function drawAliveCell(column, row) {
 	ctx.fillStyle = "red";
-	ctx.fillRect((column * CELL_WIDTH), (row * CELL_HEIGHT), CELL_WIDTH, CELL_HEIGHT);
+	ctx.fillRect((column * CELL_WIDTH) + CELL_BORDER_WIDTH, (row * CELL_HEIGHT) + CELL_BORDER_WIDTH, CELL_WIDTH - CELL_BORDER_WIDTH, CELL_HEIGHT - CELL_BORDER_WIDTH);
 }
 
 function drawDeadCell(column, row) {
 	ctx.fillStyle = "black";
-	ctx.fillRect((column * CELL_WIDTH), (row * CELL_HEIGHT), CELL_WIDTH, CELL_HEIGHT);
+	ctx.fillRect((column * CELL_WIDTH) + CELL_BORDER_WIDTH, (row * CELL_HEIGHT) + CELL_BORDER_WIDTH, CELL_WIDTH - CELL_BORDER_WIDTH, CELL_HEIGHT - CELL_BORDER_WIDTH);
 }
 
 function aliveCells(clickPosX, clickPosY) {
@@ -128,20 +131,34 @@ function update() {
 	}
 }
 
+function fillRandom() {
+	var x;
+	for (var i = 0; i < currentCells.length; i++) {
+		for (var j = 0; j < currentCells[0].length; j++) {
+			x = Math.round(Math.random()); // 1 = "alive", 0 = "dead"
+				if (x) {
+				currentCells[i][j] = x;
+				drawAliveCell(i, j);
+			}
+		}
+	}
+}
+
 function startAnimation() {
 	animate = true;
 	var FPS = document.getElementById("input_FPS").value ? document.getElementById("input_FPS").value : DEFAULT_FPS;
 	window.setInterval(update, 1000/FPS);
-	console.log(FPS);
 }
 
 
 /////////////////////<SUGGEST A LABEL HERE...>/////////////////////
 reset();
 
+var btn_fill_random = document.getElementById('button_fill_random');
 var btn_start = document.getElementById('button_start');
 var btn_stop = document.getElementById('button_stop');
 var btn_clear_reset = document.getElementById('button_clear_reset');
+
 
 canvas.addEventListener('mouseout', function(event) { mousedown = false; }, false);
 canvas.addEventListener('mousedown', function(event) { mousedown = true; aliveCells(event.pageX, event.pageY); }, false);
@@ -149,6 +166,7 @@ canvas.addEventListener('mousemove', function(event) { if (mousedown) aliveCells
 canvas.addEventListener('mouseup', function(event) { mousedown = false }, false);
 
 // works for both mobile and pc
+btn_fill_random.addEventListener('click', function(event) { reset(); fillRandom(); }, false);
 btn_start.addEventListener('click', function(event) { startAnimation(); }, false);
 btn_stop.addEventListener('click', function(event) { animate = false; }, false);
 btn_clear_reset.addEventListener('click', function(event) { reset(); }, false);
