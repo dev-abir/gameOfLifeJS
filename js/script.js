@@ -28,7 +28,7 @@ var previousCells;
 var currentCells;
 
 var mousedown = false;
-var animate = false;
+var animationIntervalID;
 
 
 /////////////////////GLOBAL FUNCS/////////////////////
@@ -38,7 +38,8 @@ function reset() {
 
 	clearCanvas();
 
-	animate = false;
+	window.clearInterval(animationIntervalID);
+	animationIntervalID = undefined;
 }
 
 function clearCanvas() {
@@ -100,9 +101,10 @@ function getNumberOfAliveNeighbours(cellsArray, column, row) {
 
 				/*wrap around*/
 				if (i == -1) x = N_COLUMNS - 1;
-				if (i == N_COLUMNS) x = 0;
+				else if (i == N_COLUMNS) x = 0;
+
 				if (j == -1) y = N_ROWS - 1;
-				if (j == N_ROWS) y = 0;
+				else if (j == N_ROWS) y = 0;
 				/**/
 
 				if (cellsArray[x][y] == 1) result += 1;
@@ -113,22 +115,26 @@ function getNumberOfAliveNeighbours(cellsArray, column, row) {
 }
 
 function update() {
-	if (animate) {
-		clearCanvas();
-		previousCells = JSON.parse(JSON.stringify(currentCells));	// want a much more efficient way...
-		for (var i = 0; i < previousCells.length; i++) {
-			for (var j = 0; j < previousCells[0].length; j++) {
-				var nAlive = getNumberOfAliveNeighbours(previousCells, i, j);
-				if (previousCells[i][j] == 1) {
-					if (nAlive < 2) currentCells[i][j] = 0;
-					else if (nAlive > 3) currentCells[i][j] = 0;
-					else drawAliveCell(i, j);
-				} else {
-					if (nAlive == 3) { currentCells[i][j] = 1; drawAliveCell(i, j); }
-				}
+	clearCanvas();
+	previousCells = JSON.parse(JSON.stringify(currentCells));	// want a much more efficient way...
+	for (var i = 0; i < previousCells.length; i++) {
+		for (var j = 0; j < previousCells[0].length; j++) {
+			var nAlive = getNumberOfAliveNeighbours(previousCells, i, j);
+			if (previousCells[i][j] == 1) {
+				if (nAlive < 2) currentCells[i][j] = 0;
+				else if (nAlive > 3) currentCells[i][j] = 0;
+				else drawAliveCell(i, j);
+			} else {
+				if (nAlive == 3) { currentCells[i][j] = 1; drawAliveCell(i, j); }
 			}
 		}
 	}
+}
+
+function startAnimation() {
+	window.clearInterval(animationIntervalID); 
+	var FPS = document.getElementById("input_FPS").value ? document.getElementById("input_FPS").value : DEFAULT_FPS;
+	animationIntervalID = window.setInterval(update, 1000/FPS);
 }
 
 function fillRandom() {
@@ -144,20 +150,25 @@ function fillRandom() {
 	}
 }
 
-function startAnimation() {
-	animate = true;
-	var FPS = document.getElementById("input_FPS").value ? document.getElementById("input_FPS").value : DEFAULT_FPS;
-	window.setInterval(update, 1000/FPS);
+function fillGliderGun() {
+	var data = [[0, 2], [0, 3], [1, 2], [1, 3], [8, 3], [8, 4], [9, 2], [9, 4], [10, 2], [10, 3], [16, 4], [16, 5], [16, 6], [17, 4], [18, 5], [22, 1], [22, 2], [23, 0], [23, 2], [24, 0], [24, 1], [24, 12], [24, 13], [25, 12], [25, 14], [26, 12], [34, 0], [34, 1], [35, 0], [35, 1], [35, 7], [35, 8], [35, 9], [36, 7], [37, 8]];
+
+	for (var i = 0; i < data.length; i++) {
+		currentCells[Math.trunc(N_ROWS / 4) + data[i][0]][Math.trunc(N_COLUMNS / 4) + data[i][1]] = 1; // 1 = "alive", 0 = "dead"
+		drawAliveCell(Math.trunc(N_ROWS / 4) + data[i][0], Math.trunc(N_COLUMNS / 4) + data[i][1]);
+	}
 }
 
 
 /////////////////////<SUGGEST A LABEL HERE...>/////////////////////
 reset();
 
-var btn_fill_random = document.getElementById('button_fill_random');
 var btn_start = document.getElementById('button_start');
 var btn_stop = document.getElementById('button_stop');
 var btn_clear_reset = document.getElementById('button_clear_reset');
+var btn_fill_random = document.getElementById('button_fill_random');
+var btn_fill_glider_gun = document.getElementById('button_fill_glider_gun');
+var inp_fps = document.getElementById('input_FPS');
 
 
 canvas.addEventListener('mouseout', function(event) { mousedown = false; }, false);
@@ -166,10 +177,12 @@ canvas.addEventListener('mousemove', function(event) { if (mousedown) aliveCells
 canvas.addEventListener('mouseup', function(event) { mousedown = false }, false);
 
 // works for both mobile and pc
-btn_fill_random.addEventListener('click', function(event) { reset(); fillRandom(); }, false);
 btn_start.addEventListener('click', function(event) { startAnimation(); }, false);
-btn_stop.addEventListener('click', function(event) { animate = false; }, false);
+btn_stop.addEventListener('click', function(event) { window.clearInterval(animationIntervalID); animationIntervalID = undefined; }, false);
 btn_clear_reset.addEventListener('click', function(event) { reset(); }, false);
+btn_fill_random.addEventListener('click', function(event) { reset(); fillRandom(); }, false);
+btn_fill_glider_gun.addEventListener('click', function(event) { reset(); fillGliderGun(); }, false);
+inp_fps.addEventListener('input', function(event) { if (animationIntervalID) startAnimation(); }, false);
 
 // for mobile devices
 canvas.addEventListener('touchcancel', function(event) { event.preventDefault(); mousedown = false; }, false);
